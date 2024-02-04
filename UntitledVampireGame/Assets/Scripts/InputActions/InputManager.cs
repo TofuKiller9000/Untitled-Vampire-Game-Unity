@@ -14,6 +14,7 @@ public class InputManager : Singleton<InputManager>
 
     public delegate void StartTouchEvent(Vector2 position, float time);
     public event StartTouchEvent OnStartTouch;
+
     public delegate void EndTouchEvent(Vector2 position, float time);
     public event EndTouchEvent OnEndTouch;
 
@@ -28,7 +29,6 @@ public class InputManager : Singleton<InputManager>
         touchControls.Enable();
         EnhancedTouchSupport.Enable();
         TouchSimulation.Enable();
-        UnityEngine.InputSystem.EnhancedTouch.Touch.onFingerDown += FingerDown;
     }
 
     private void OnDisable()
@@ -36,53 +36,42 @@ public class InputManager : Singleton<InputManager>
         touchControls.Disable();
         EnhancedTouchSupport.Enable();
         TouchSimulation.Disable();
-        UnityEngine.InputSystem.EnhancedTouch.Touch.onFingerDown -= FingerDown;
     }
 
     private void Start()
     {
-        touchControls.Touch.TouchPress.started += ctx => StartTouch(ctx);//this is the syntax for subscribing to an event.
-                                                                         //This is simply one of many different ways we can set up inputs
-        touchControls.Touch.TouchPress.canceled += ctx => EndTouch(ctx);
-
-        
-    }
-
-    private void FingerDown(Finger finger)
-    {
-        if(OnStartTouch != null)
-        {
-            OnStartTouch(finger.screenPosition, Time.time);
-        }
+        print("In Start");
+        touchControls.Touch.PrimaryContact.started += ctx => StartTouch(ctx);//this is the syntax for subscribing to an event.
+        //                                                                     //This is simply one of many different ways we can set up inputs
+        touchControls.Touch.PrimaryContact.canceled += ctx => EndTouch(ctx);
     }
 
     public void StartTouch(InputAction.CallbackContext ctx)
     {
-        Debug.Log("Touch started: " + touchControls.Touch.TouchPosition.ReadValue<Vector2>());
 
-        if(OnStartTouch != null) //checking to see if any scripts are currenting listening for this input.
-                                 //If no scripts are listening for the input, then it is a waste of time sending the input out
+        //Debug.Log("Touch started: " + Utils.ScreenToWorld(_cameraMain, touchControls.Touch.TouchPosition.ReadValue<Vector2>()));
+
+        if (OnStartTouch != null) //checking to see if any scripts are currenting listening for this input.
+                                  //If no scripts are listening for the input, then it is a waste of time sending the input out
         {
-            OnStartTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)ctx.startTime); //here we are calling the vent, which if any scripts are listening for this event, their functions tied to it will fire off
+            OnStartTouch(Utils.ScreenToWorld(_cameraMain, touchControls.Touch.TouchPosition.ReadValue<Vector2>()), (float)ctx.startTime);
+            //here we are calling the vent, which if any scripts are listening for this event, their functions tied to it will fire off
         }
     }
 
     public void EndTouch(InputAction.CallbackContext ctx)
     {
-        Debug.Log("Touch ended");
-        if (OnEndTouch != null) 
+        //Debug.Log("Touch ended: " + Utils.ScreenToWorld(_cameraMain, touchControls.Touch.TouchPosition.ReadValue<Vector2>()));
+        if (OnEndTouch != null)
         {
-            OnEndTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)ctx.time); //if we wanted to get the amount of time between starting to touch and stopping touch
-                                                                                                 //(time - starTime)
+            OnEndTouch(Utils.ScreenToWorld(_cameraMain, touchControls.Touch.TouchPosition.ReadValue<Vector2>()), (float)ctx.time);
+            //if we wanted to get the amount of time between starting to touch and stopping touch
+            //(time - starTime)
         }
     }
 
-    public Vector2 TouchPosition()
+    public Vector2 PrimaryPosition()
     {
-        Vector3 screenCoordinates = new Vector3(touchControls.Touch.TouchPosition.ReadValue<Vector2>().x, touchControls.Touch.TouchPosition.ReadValue<Vector2>().y, _cameraMain.nearClipPlane);
-        Vector3 worldCoordinates = _cameraMain.ScreenToWorldPoint(screenCoordinates);
-        worldCoordinates.z = 0;
-        transform.position = worldCoordinates;
-        return worldCoordinates;
+        return Utils.ScreenToWorld(_cameraMain, touchControls.Touch.TouchPosition.ReadValue<Vector2>());
     }
 }

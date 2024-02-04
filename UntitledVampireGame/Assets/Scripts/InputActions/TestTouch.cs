@@ -26,6 +26,7 @@ public class TestTouch : MonoBehaviour
 
     public void Move(Vector2 screenPosition, float time)
     {
+        //print("In Move");
         Vector3 screenCoordinates = new Vector3(screenPosition.x, screenPosition.y, _cameraMain.nearClipPlane);
         Vector3 worldCoordinates = _cameraMain.ScreenToWorldPoint(screenCoordinates);
         worldCoordinates.z = 0; 
